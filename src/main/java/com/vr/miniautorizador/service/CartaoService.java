@@ -14,12 +14,20 @@ public class CartaoService {
     @Autowired
     private CartaoRepository cartaoRepository;
 
-    public Cartao criarCartao(Cartao cartao) {
+    public Cartao createCard(Cartao cartao) {
         Optional<Cartao> existingCartao = cartaoRepository.findByNumeroCartao(cartao.getNumeroCartao());
         if (existingCartao.isPresent()) {
             throw new RuntimeException("Cartão já existe");
         }
         cartao.setSaldo(new BigDecimal("500.00"));
         return cartaoRepository.save(cartao);
+    }
+
+    public BigDecimal getCardBalance(String numeroCartao) {
+        Optional<Cartao> cartao = cartaoRepository.findByNumeroCartao(numeroCartao);
+        if (cartao.isEmpty()) {
+            throw new RuntimeException("Cartão inexistente");
+        }
+        return cartao.get().getSaldo();
     }
 }
