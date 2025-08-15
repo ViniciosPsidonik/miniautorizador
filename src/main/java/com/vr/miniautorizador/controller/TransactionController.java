@@ -19,21 +19,10 @@ public class TransactionController {
 
     @PostMapping
     public ResponseEntity<String> authorizeTransaction(@RequestBody TransactionRequestDTO transactionRequestDTO) {
-        try {
-            transactionService.authorizeTransaction(
-                    transactionRequestDTO.getNumeroCartao(),
-                    transactionRequestDTO.getSenhaCartao(),
-                    transactionRequestDTO.getValor());
-            return new ResponseEntity<>("OK", HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            String errorMessage = e.getMessage();
-            if (errorMessage.equals("SALDO_INSUFICIENTE") ||
-                    errorMessage.equals("SENHA_INVALIDA") ||
-                    errorMessage.equals("CARTAO_INEXISTENTE")) {
-                return new ResponseEntity<>(errorMessage, HttpStatus.UNPROCESSABLE_ENTITY);
-            } else {
-                return new ResponseEntity<>("ERRO_INTERNO", HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
+        transactionService.authorizeTransaction(
+                transactionRequestDTO.getNumeroCartao(),
+                transactionRequestDTO.getSenhaCartao(),
+                transactionRequestDTO.getValor());
+        return new ResponseEntity<>("OK", HttpStatus.CREATED);
     }
 }

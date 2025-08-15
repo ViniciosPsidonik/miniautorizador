@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import com.vr.miniautorizador.exception.CardAlreadyExistsException;
+import com.vr.miniautorizador.exception.CardNotFoundException;
 
 @Service
 public class CartaoService {
@@ -17,7 +19,7 @@ public class CartaoService {
     public Cartao createCard(Cartao cartao) {
         Optional<Cartao> existingCartao = cartaoRepository.findByNumeroCartao(cartao.getNumeroCartao());
         if (existingCartao.isPresent()) {
-            throw new RuntimeException("Cartão já existe");
+            throw new CardAlreadyExistsException(cartao.getNumeroCartao(), cartao.getSenha());
         }
         cartao.setSaldo(new BigDecimal("500.00"));
         return cartaoRepository.save(cartao);
@@ -26,7 +28,7 @@ public class CartaoService {
     public BigDecimal getCardBalance(String numeroCartao) {
         Optional<Cartao> cartao = cartaoRepository.findByNumeroCartao(numeroCartao);
         if (cartao.isEmpty()) {
-            throw new RuntimeException("Cartão inexistente");
+            throw new CardNotFoundException("Cartão inexistente");
         }
         return cartao.get().getSaldo();
     }

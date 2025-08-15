@@ -24,33 +24,21 @@ public class CartaoController {
 
     @PostMapping
     public ResponseEntity<CartaoRequestDTO> createCard(@RequestBody CartaoRequestDTO cartaoRequestDTO) {
-        try {
-            Cartao cartao = new Cartao();
-            cartao.setNumeroCartao(cartaoRequestDTO.getNumeroCartao());
-            cartao.setSenha(cartaoRequestDTO.getSenha());
-            Cartao novoCartao = cartaoService.createCard(cartao);
+        Cartao cartao = new Cartao();
+        cartao.setNumeroCartao(cartaoRequestDTO.getNumeroCartao());
+        cartao.setSenha(cartaoRequestDTO.getSenha());
+        Cartao novoCartao = cartaoService.createCard(cartao);
 
-            CartaoRequestDTO responseDTO = new CartaoRequestDTO();
-            responseDTO.setNumeroCartao(novoCartao.getNumeroCartao());
-            responseDTO.setSenha(novoCartao.getSenha());
+        CartaoRequestDTO responseDTO = new CartaoRequestDTO();
+        responseDTO.setNumeroCartao(novoCartao.getNumeroCartao());
+        responseDTO.setSenha(novoCartao.getSenha());
 
-            return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return new ResponseEntity<>(cartaoRequestDTO, HttpStatus.UNPROCESSABLE_ENTITY);
-        }
+        return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
     @GetMapping("/{numeroCartao}")
     public ResponseEntity<BigDecimal> getCardBalance(@PathVariable String numeroCartao) {
-        try {
-            BigDecimal saldo = cartaoService.getCardBalance(numeroCartao);
-            return new ResponseEntity<>(saldo, HttpStatus.OK);
-        } catch (RuntimeException e) {
-            if (e.getMessage().equals("Cartão inexistente")) {
-                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-            } else {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
+        BigDecimal saldo = cartaoService.getCardBalance(numeroCartao);
+        return new ResponseEntity<>(saldo, HttpStatus.OK);
     }
 }
