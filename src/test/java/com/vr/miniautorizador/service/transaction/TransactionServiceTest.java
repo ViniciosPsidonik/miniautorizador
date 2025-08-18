@@ -41,55 +41,54 @@ class TransactionServiceTest {
 
     @Test
     void authorizeTransaction_Success() {
-        when(cartaoRepository.findByNumeroCartao(anyString())).thenReturn(Optional.of(cartao));
+        when(cartaoRepository.findByNumeroCartaoForUpdate(anyString())).thenReturn(Optional.of(cartao));
         when(cartaoRepository.save(any(Cartao.class))).thenReturn(cartao);
 
         BigDecimal transactionValue = new BigDecimal("100.00");
         transactionService.authorizeTransaction(cartao.getNumeroCartao(), cartao.getSenha(), transactionValue);
 
         assertEquals(new BigDecimal("400.00"), cartao.getSaldo());
-        verify(cartaoRepository, times(1)).findByNumeroCartao(anyString());
+        verify(cartaoRepository, times(1)).findByNumeroCartaoForUpdate(anyString());
         verify(cartaoRepository, times(1)).save(any(Cartao.class));
     }
 
     @Test
     void authorizeTransaction_CardNotFound_ThrowsException() {
-        when(cartaoRepository.findByNumeroCartao(anyString())).thenReturn(Optional.empty());
+        when(cartaoRepository.findByNumeroCartaoForUpdate(anyString())).thenReturn(Optional.empty());
 
         CardNotFoundException exception = assertThrows(CardNotFoundException.class, () -> {
             transactionService.authorizeTransaction("nonexistent_card", "1234", new BigDecimal("10.00"));
         });
 
         assertEquals("CARTAO_INEXISTENTE", exception.getMessage());
-        verify(cartaoRepository, times(1)).findByNumeroCartao(anyString());
+        verify(cartaoRepository, times(1)).findByNumeroCartaoForUpdate(anyString());
         verify(cartaoRepository, never()).save(any(Cartao.class));
     }
 
     @Test
     void authorizeTransaction_InvalidPassword_ThrowsException() {
-        when(cartaoRepository.findByNumeroCartao(anyString())).thenReturn(Optional.of(cartao));
-
+        when(cartaoRepository.findByNumeroCartaoForUpdate(anyString())).thenReturn(Optional.of(cartao));
         InvalidPasswordException exception = assertThrows(InvalidPasswordException.class, () -> {
             transactionService.authorizeTransaction(cartao.getNumeroCartao(), "wrong_password",
                     new BigDecimal("10.00"));
         });
 
         assertEquals("SENHA_INVALIDA", exception.getMessage());
-        verify(cartaoRepository, times(1)).findByNumeroCartao(anyString());
+        verify(cartaoRepository, times(1)).findByNumeroCartaoForUpdate(anyString());
         verify(cartaoRepository, never()).save(any(Cartao.class));
     }
 
     @Test
     void authorizeTransaction_InsufficientBalance_ThrowsException() {
-        when(cartaoRepository.findByNumeroCartao(anyString())).thenReturn(Optional.of(cartao));
-
+        when(cartaoRepository.findByNumeroCartaoForUpdate(anyString())).thenReturn(Optional.of(cartao));
         BigDecimal largeValue = new BigDecimal("600.00");
+
         InsufficientBalanceException exception = assertThrows(InsufficientBalanceException.class, () -> {
             transactionService.authorizeTransaction(cartao.getNumeroCartao(), cartao.getSenha(), largeValue);
         });
 
         assertEquals("SALDO_INSUFICIENTE", exception.getMessage());
-        verify(cartaoRepository, times(1)).findByNumeroCartao(anyString());
+        verify(cartaoRepository, times(1)).findByNumeroCartaoForUpdate(anyString());
         verify(cartaoRepository, never()).save(any(Cartao.class));
     }
 }
