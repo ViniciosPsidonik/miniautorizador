@@ -3,7 +3,6 @@ package com.vr.miniautorizador.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vr.miniautorizador.dto.CartaoRequestDTO;
 import com.vr.miniautorizador.dto.TransactionRequestDTO;
-import com.vr.miniautorizador.model.Cartao;
 import com.vr.miniautorizador.repository.CartaoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -102,7 +101,7 @@ class TransactionIntegrationTest {
                                 .with(csrf())
                                 .with(httpBasic("username", "password")));
 
-                transactionRequestDTO.setSenhaCartao("wrong_password"); // Set wrong password
+                transactionRequestDTO.setSenhaCartao("0000");
 
                 mockMvc.perform(post("/transacoes")
                                 .contentType(MediaType.APPLICATION_JSON)

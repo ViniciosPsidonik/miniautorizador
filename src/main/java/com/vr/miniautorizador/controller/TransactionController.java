@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/transacoes")
@@ -18,7 +19,8 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @PostMapping
-    public ResponseEntity<String> authorizeTransaction(@RequestBody TransactionRequestDTO transactionRequestDTO) {
+    public ResponseEntity<String> authorizeTransaction(
+            @Valid @RequestBody TransactionRequestDTO transactionRequestDTO) {
         transactionService.authorizeTransaction(
                 transactionRequestDTO.getNumeroCartao(),
                 transactionRequestDTO.getSenhaCartao(),

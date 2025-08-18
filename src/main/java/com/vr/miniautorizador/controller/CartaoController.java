@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 
@@ -23,7 +24,7 @@ public class CartaoController {
     private CartaoService cartaoService;
 
     @PostMapping
-    public ResponseEntity<CartaoRequestDTO> createCard(@RequestBody CartaoRequestDTO cartaoRequestDTO) {
+    public ResponseEntity<CartaoRequestDTO> createCard(@Valid @RequestBody CartaoRequestDTO cartaoRequestDTO) {
         Cartao cartao = new Cartao();
         cartao.setNumeroCartao(cartaoRequestDTO.getNumeroCartao());
         cartao.setSenha(cartaoRequestDTO.getSenha());
