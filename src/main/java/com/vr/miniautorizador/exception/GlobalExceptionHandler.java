@@ -1,14 +1,14 @@
-package com.vr.miniautorizador.controller;
+package com.vr.miniautorizador.exception;
 
 import com.vr.miniautorizador.dto.CartaoRequestDTO;
-import com.vr.miniautorizador.exception.CardAlreadyExistsException;
-import com.vr.miniautorizador.exception.CardNotFoundException;
-import com.vr.miniautorizador.exception.InsufficientBalanceException;
-import com.vr.miniautorizador.exception.InvalidPasswordException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import jakarta.validation.ConstraintViolationException;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -23,9 +23,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CardNotFoundException.class)
     public ResponseEntity<String> handleCardNotFoundException(CardNotFoundException ex) {
-        if (ex.getMessage().equals("CARTAO_INEXISTENTE")) {
+        if ("CARTAO_INEXISTENTE".equals(ex.getMessage())) {
             return new ResponseEntity<>("CARTAO_INEXISTENTE", HttpStatus.UNPROCESSABLE_ENTITY);
-        } else { // For get balance endpoint
+        } else {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
@@ -40,7 +40,21 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>("SALDO_INSUFICIENTE", HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
-    // Generic handler for any other unexpected exceptions
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<String> handleValidationException(MethodArgumentNotValidException ex) {
+        FieldError fieldError = ex.getBindingResult().getFieldError();
+        String message = fieldError != null ? fieldError.getDefaultMessage() : "DADOS_INVALIDOS";
+        return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<String> handleConstraintViolation(ConstraintViolationException ex) {
+        String message = ex.getConstraintViolations().stream().findFirst()
+                .map(cv -> cv.getMessage()).orElse("DADOS_INVALIDOS");
+        return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+    }
+
+    // Generic fallback
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGenericException(Exception ex) {
         return new ResponseEntity<>("ERRO_INTERNO", HttpStatus.INTERNAL_SERVER_ERROR);
