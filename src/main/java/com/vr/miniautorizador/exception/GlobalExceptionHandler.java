@@ -1,10 +1,6 @@
-package com.vr.miniautorizador.controller;
+package com.vr.miniautorizador.exception;
 
 import com.vr.miniautorizador.dto.CartaoRequestDTO;
-import com.vr.miniautorizador.exception.CardAlreadyExistsException;
-import com.vr.miniautorizador.exception.CardNotFoundException;
-import com.vr.miniautorizador.exception.InsufficientBalanceException;
-import com.vr.miniautorizador.exception.InvalidPasswordException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
