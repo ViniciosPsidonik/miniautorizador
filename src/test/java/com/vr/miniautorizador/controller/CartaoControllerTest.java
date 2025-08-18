@@ -84,12 +84,12 @@ class CartaoControllerTest {
 
     @Test
     void getCardBalance_CardNotFound_ThrowsException() {
-        when(cartaoService.getCardBalance(anyString())).thenThrow(new CardNotFoundException("Cartão inexistente"));
+        when(cartaoService.getCardBalance(anyString())).thenThrow(new CardNotFoundException("CARTAO_INEXISTENTE"));
 
         CardNotFoundException ex = assertThrows(CardNotFoundException.class,
                 () -> cartaoController.getCardBalance("nonexistent_card"));
 
-        assertEquals("Cartão inexistente", ex.getMessage());
+        assertEquals("CARTAO_INEXISTENTE", ex.getMessage());
         verify(cartaoService, times(1)).getCardBalance("nonexistent_card");
     }
 }

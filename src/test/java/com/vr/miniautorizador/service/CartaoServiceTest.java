@@ -84,7 +84,7 @@ class CartaoServiceTest {
             cartaoService.getCardBalance("nonexistent_card");
         });
 
-        assertEquals("Cartão inexistente", exception.getMessage());
+        assertEquals("CARTAO_INEXISTENTE", exception.getMessage());
         verify(cartaoRepository, times(1)).findByNumeroCartao(anyString());
     }
 }

@@ -9,6 +9,8 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,13 +23,15 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(responseBody, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
+    private static final Map<String, ResponseEntity<String>> CARD_NOT_FOUND_RESPONSES = Map.of(
+            "CARTAO_INEXISTENTE", new ResponseEntity<>("CARTAO_INEXISTENTE", HttpStatus.UNPROCESSABLE_ENTITY));
+
     @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<String> handleCardNotFoundException(CardNotFoundException ex) {
-        if ("CARTAO_INEXISTENTE".equals(ex.getMessage())) {
-            return new ResponseEntity<>("CARTAO_INEXISTENTE", HttpStatus.UNPROCESSABLE_ENTITY);
-        } else {
+    public ResponseEntity<String> handleCardNotFoundException(CardNotFoundException ex, HttpServletRequest request) {
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+        return CARD_NOT_FOUND_RESPONSES.getOrDefault(ex.getMessage(), new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
     @ExceptionHandler(InvalidPasswordException.class)
