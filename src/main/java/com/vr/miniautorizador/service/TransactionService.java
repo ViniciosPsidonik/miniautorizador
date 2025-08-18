@@ -20,7 +20,7 @@ public class TransactionService {
 
     @Transactional
     public void authorizeTransaction(String numeroCartao, String senhaCartao, BigDecimal valor) {
-        Optional<Cartao> cartaoOptional = cartaoRepository.findByNumeroCartao(numeroCartao);
+        Optional<Cartao> cartaoOptional = cartaoRepository.findByNumeroCartaoForUpdate(numeroCartao);
 
         if (cartaoOptional.isEmpty()) {
             throw new CardNotFoundException("CARTAO_INEXISTENTE");
