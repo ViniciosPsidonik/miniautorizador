@@ -16,6 +16,10 @@ import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 
+/**
+ * REST controller responsável por operações relacionadas a cartões,
+ * incluindo criação de cartão e consulta de saldo.
+ */
 @RestController
 @RequestMapping("/cartoes")
 public class CartaoController {
@@ -23,6 +27,12 @@ public class CartaoController {
     @Autowired
     private CartaoService cartaoService;
 
+    /**
+     * Cria um novo cartão com saldo inicial padrão.
+     *
+     * @param cartaoRequestDTO DTO contendo número do cartão e senha
+     * @return DTO do cartão criado com status HTTP 201 (Created)
+     */
     @PostMapping
     public ResponseEntity<CartaoRequestDTO> createCard(@Valid @RequestBody CartaoRequestDTO cartaoRequestDTO) {
         Cartao cartao = new Cartao();
@@ -37,6 +47,12 @@ public class CartaoController {
         return new ResponseEntity<>(responseDTO, HttpStatus.CREATED);
     }
 
+    /**
+     * Retorna o saldo atual do cartão informado.
+     *
+     * @param numeroCartao número do cartão informado na URL
+     * @return saldo disponível no cartão com status HTTP 200 (OK)
+     */
     @GetMapping("/{numeroCartao}")
     public ResponseEntity<BigDecimal> getCardBalance(@PathVariable String numeroCartao) {
         BigDecimal saldo = cartaoService.getCardBalance(numeroCartao);

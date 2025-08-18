@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
+/**
+ * REST controller responsável por autorizar transações de débito em cartões.
+ */
 @RestController
 @RequestMapping("/transacoes")
 public class TransactionController {
@@ -18,6 +21,15 @@ public class TransactionController {
     @Autowired
     private TransactionService transactionService;
 
+    /**
+     * Autoriza uma transação debitando o valor do cartão após validações de senha e
+     * saldo.
+     *
+     * @param transactionRequestDTO DTO contendo número do cartão, senha e valor da
+     *                              compra
+     * @return string "OK" com status HTTP 201 (Created) quando a transação é
+     *         autorizada
+     */
     @PostMapping
     public ResponseEntity<String> authorizeTransaction(
             @Valid @RequestBody TransactionRequestDTO transactionRequestDTO) {

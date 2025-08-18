@@ -13,6 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * Serviço responsável por autorizar transações de débito.
+ * <p>
+ * Validações de negócio (senha, saldo, etc.) são aplicadas via o conjunto de
+ * {@link com.vr.miniautorizador.service.validation.TransactionValidationStrategy}
+ * injetado.
+ * </p>
+ */
 @Service
 public class TransactionService {
 
@@ -24,6 +32,24 @@ public class TransactionService {
             new PasswordValidationStrategy(),
             new BalanceValidationStrategy());
 
+    /**
+     * Autoriza uma transação debitando valor do saldo do cartão.
+     * <p>
+     * A sequência é:
+     * <ol>
+     * <li>Busca o cartão com lock pessimista.</li>
+     * <li>Executa as validações definidas nas estratégias.</li>
+     * <li>Debita o valor e persiste.</li>
+     * </ol>
+     * </p>
+     * 
+     * @param numeroCartao número do cartão
+     * @param senhaCartao  senha informada na requisição
+     * @param valor        valor da transação
+     * @throws CardNotFoundException        se o cartão não existir
+     * @throws InvalidPasswordException     se a senha não corresponder
+     * @throws InsufficientBalanceException se o saldo for insuficiente
+     */
     @Transactional
     public void authorizeTransaction(String numeroCartao, String senhaCartao, BigDecimal valor) {
         Cartao cartao = cartaoRepository.findByNumeroCartaoForUpdate(numeroCartao)
