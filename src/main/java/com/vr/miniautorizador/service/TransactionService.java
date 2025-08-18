@@ -1,5 +1,8 @@
 package com.vr.miniautorizador.service;
 
+import com.vr.miniautorizador.exception.CardNotFoundException;
+import com.vr.miniautorizador.exception.InsufficientBalanceException;
+import com.vr.miniautorizador.exception.InvalidPasswordException;
 import com.vr.miniautorizador.model.Cartao;
 import com.vr.miniautorizador.repository.CartaoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,17 +23,17 @@ public class TransactionService {
         Optional<Cartao> cartaoOptional = cartaoRepository.findByNumeroCartao(numeroCartao);
 
         if (cartaoOptional.isEmpty()) {
-            throw new RuntimeException("CARTAO_INEXISTENTE");
+            throw new CardNotFoundException("CARTAO_INEXISTENTE");
         }
 
         Cartao cartao = cartaoOptional.get();
 
         if (!cartao.getSenha().equals(senhaCartao)) {
-            throw new RuntimeException("SENHA_INVALIDA");
+            throw new InvalidPasswordException("SENHA_INVALIDA");
         }
 
         if (cartao.getSaldo().compareTo(valor) < 0) {
-            throw new RuntimeException("SALDO_INSUFICIENTE");
+            throw new InsufficientBalanceException("SALDO_INSUFICIENTE");
         }
 
         cartao.setSaldo(cartao.getSaldo().subtract(valor));
