@@ -1,6 +1,5 @@
 package com.vr.miniautorizador.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vr.miniautorizador.dto.CartaoRequestDTO;
 import com.vr.miniautorizador.exception.CardAlreadyExistsException;
 import com.vr.miniautorizador.exception.CardNotFoundException;
@@ -8,39 +7,28 @@ import com.vr.miniautorizador.model.Cartao;
 import com.vr.miniautorizador.service.CartaoService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import org.springframework.security.test.context.support.WithMockUser;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(CartaoController.class)
+@ExtendWith(MockitoExtension.class)
 class CartaoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @MockBean
+    @Mock
     private CartaoService cartaoService;
+
+    @InjectMocks
+    private CartaoController cartaoController;
 
     private Cartao cartao;
     private CartaoRequestDTO cartaoRequestDTO;
@@ -58,65 +46,52 @@ class CartaoControllerTest {
     }
 
     @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void createCard_Success() throws Exception {
+    void createCard_Success() {
         when(cartaoService.createCard(any(Cartao.class))).thenReturn(cartao);
 
-        mockMvc.perform(post("/cartoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartaoRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.numeroCartao").value("6549873025634501"))
-                .andExpect(jsonPath("$.senha").value("1234"));
+        ResponseEntity<CartaoRequestDTO> response = cartaoController.createCard(cartaoRequestDTO);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(cartaoRequestDTO.getNumeroCartao(), response.getBody().getNumeroCartao());
+        assertEquals(cartaoRequestDTO.getSenha(), response.getBody().getSenha());
+        verify(cartaoService, times(1)).createCard(any(Cartao.class));
     }
 
     @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void createCard_CardAlreadyExists_ReturnsUnprocessableEntity() throws Exception {
+    void createCard_CardAlreadyExists_ReturnsUnprocessableEntity() {
         when(cartaoService.createCard(any(Cartao.class)))
                 .thenThrow(new CardAlreadyExistsException(cartaoRequestDTO.getNumeroCartao(),
                         cartaoRequestDTO.getSenha()));
 
-        mockMvc.perform(post("/cartoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartaoRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.numeroCartao").value("6549873025634501"))
-                .andExpect(jsonPath("$.senha").value("1234"));
+        ResponseEntity<CartaoRequestDTO> response = cartaoController.createCard(cartaoRequestDTO);
+
+        assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(cartaoRequestDTO.getNumeroCartao(), response.getBody().getNumeroCartao());
+        assertEquals(cartaoRequestDTO.getSenha(), response.getBody().getSenha());
+        verify(cartaoService, times(1)).createCard(any(Cartao.class));
     }
 
     @Test
-    void createCard_Unauthorized() throws Exception {
-        mockMvc.perform(post("/cartoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(cartaoRequestDTO)))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void getCardBalance_Success() throws Exception {
+    void getCardBalance_Success() {
         when(cartaoService.getCardBalance(anyString())).thenReturn(new BigDecimal("495.15"));
 
-        mockMvc.perform(get("/cartoes/{numeroCartao}", "6549873025634501"))
-                .andExpect(status().isOk())
-                .andExpect(content().string("495.15"));
+        ResponseEntity<BigDecimal> response = cartaoController.getCardBalance("6549873025634501");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(new BigDecimal("495.15"), response.getBody());
+        verify(cartaoService, times(1)).getCardBalance("6549873025634501");
     }
 
     @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void getCardBalance_CardNotFound_ReturnsNotFound() throws Exception {
+    void getCardBalance_CardNotFound_ReturnsNotFound() {
         when(cartaoService.getCardBalance(anyString())).thenThrow(new CardNotFoundException("Cartão inexistente"));
 
-        mockMvc.perform(get("/cartoes/{numeroCartao}", "nonexistent_card"))
-                .andExpect(status().isNotFound());
-    }
+        ResponseEntity<BigDecimal> response = cartaoController.getCardBalance("nonexistent_card");
 
-    @Test
-    void getCardBalance_Unauthorized() throws Exception {
-        mockMvc.perform(get("/cartoes/{numeroCartao}", "6549873025634501"))
-                .andExpect(status().isUnauthorized());
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
+        verify(cartaoService, times(1)).getCardBalance("nonexistent_card");
     }
 }

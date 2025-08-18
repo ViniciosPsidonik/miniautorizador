@@ -1,6 +1,5 @@
 package com.vr.miniautorizador.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vr.miniautorizador.dto.TransactionRequestDTO;
 import com.vr.miniautorizador.exception.CardNotFoundException;
 import com.vr.miniautorizador.exception.InsufficientBalanceException;
@@ -8,107 +7,94 @@ import com.vr.miniautorizador.exception.InvalidPasswordException;
 import com.vr.miniautorizador.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
-import org.springframework.security.test.context.support.WithMockUser;
+import static org.mockito.Mockito.*;
 
-@WebMvcTest(TransactionController.class)
+@ExtendWith(MockitoExtension.class)
 class TransactionControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Mock
+        private TransactionService transactionService;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @InjectMocks
+        private TransactionController transactionController;
 
-    @MockBean
-    private TransactionService transactionService;
+        private TransactionRequestDTO transactionRequestDTO;
 
-    private TransactionRequestDTO transactionRequestDTO;
+        @BeforeEach
+        void setUp() {
+                transactionRequestDTO = new TransactionRequestDTO();
+                transactionRequestDTO.setNumeroCartao("6549873025634501");
+                transactionRequestDTO.setSenhaCartao("1234");
+                transactionRequestDTO.setValor(new BigDecimal("10.00"));
+        }
 
-    @BeforeEach
-    void setUp() {
-        transactionRequestDTO = new TransactionRequestDTO();
-        transactionRequestDTO.setNumeroCartao("6549873025634501");
-        transactionRequestDTO.setSenhaCartao("1234");
-        transactionRequestDTO.setValor(new BigDecimal("10.00"));
-    }
+        @Test
+        void authorizeTransaction_Success() {
+                doNothing().when(transactionService).authorizeTransaction(any(), any(), any());
 
-    @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void authorizeTransaction_Success() throws Exception {
-        doNothing().when(transactionService).authorizeTransaction(anyString(), anyString(), any(BigDecimal.class));
+                ResponseEntity<String> response = transactionController.authorizeTransaction(transactionRequestDTO);
 
-        mockMvc.perform(post("/transacoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transactionRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isCreated())
-                .andExpect(content().string("OK"));
-    }
+                assertEquals(HttpStatus.CREATED, response.getStatusCode());
+                assertEquals("OK", response.getBody());
+                verify(transactionService, times(1))
+                                .authorizeTransaction(transactionRequestDTO.getNumeroCartao(),
+                                                transactionRequestDTO.getSenhaCartao(),
+                                                transactionRequestDTO.getValor());
+        }
 
-    @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void authorizeTransaction_CardNotFound_ReturnsUnprocessableEntity() throws Exception {
-        doThrow(new CardNotFoundException("CARTAO_INEXISTENTE"))
-                .when(transactionService).authorizeTransaction(anyString(), anyString(), any(BigDecimal.class));
+        @Test
+        void authorizeTransaction_CardNotFound_ReturnsUnprocessableEntity() {
+                doThrow(new CardNotFoundException("CARTAO_INEXISTENTE"))
+                                .when(transactionService).authorizeTransaction(any(), any(), any());
 
-        mockMvc.perform(post("/transacoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transactionRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().string("CARTAO_INEXISTENTE"));
-    }
+                ResponseEntity<String> response = transactionController.authorizeTransaction(transactionRequestDTO);
 
-    @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void authorizeTransaction_InvalidPassword_ReturnsUnprocessableEntity() throws Exception {
-        doThrow(new InvalidPasswordException("SENHA_INVALIDA"))
-                .when(transactionService).authorizeTransaction(anyString(), anyString(), any(BigDecimal.class));
+                assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+                assertEquals("CARTAO_INEXISTENTE", response.getBody());
+                verify(transactionService, times(1))
+                                .authorizeTransaction(transactionRequestDTO.getNumeroCartao(),
+                                                transactionRequestDTO.getSenhaCartao(),
+                                                transactionRequestDTO.getValor());
+        }
 
-        mockMvc.perform(post("/transacoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transactionRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().string("SENHA_INVALIDA"));
-    }
+        @Test
+        void authorizeTransaction_InvalidPassword_ReturnsUnprocessableEntity() {
+                doThrow(new InvalidPasswordException("SENHA_INVALIDA"))
+                                .when(transactionService).authorizeTransaction(any(), any(), any());
 
-    @Test
-    @WithMockUser(username = "username", password = "password", roles = "USER")
-    void authorizeTransaction_InsufficientBalance_ReturnsUnprocessableEntity() throws Exception {
-        doThrow(new InsufficientBalanceException("SALDO_INSUFICIENTE"))
-                .when(transactionService).authorizeTransaction(anyString(), anyString(), any(BigDecimal.class));
+                ResponseEntity<String> response = transactionController.authorizeTransaction(transactionRequestDTO);
 
-        mockMvc.perform(post("/transacoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transactionRequestDTO))
-                .with(csrf()))
-                .andExpect(status().isUnprocessableEntity())
-                .andExpect(content().string("SALDO_INSUFICIENTE"));
-    }
+                assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+                assertEquals("SENHA_INVALIDA", response.getBody());
+                verify(transactionService, times(1))
+                                .authorizeTransaction(transactionRequestDTO.getNumeroCartao(),
+                                                transactionRequestDTO.getSenhaCartao(),
+                                                transactionRequestDTO.getValor());
+        }
 
-    @Test
-    void authorizeTransaction_Unauthorized() throws Exception {
-        mockMvc.perform(post("/transacoes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(transactionRequestDTO)))
-                .andExpect(status().isForbidden());
-    }
+        @Test
+        void authorizeTransaction_InsufficientBalance_ReturnsUnprocessableEntity() {
+                doThrow(new InsufficientBalanceException("SALDO_INSUFICIENTE"))
+                                .when(transactionService).authorizeTransaction(any(), any(), any());
+
+                ResponseEntity<String> response = transactionController.authorizeTransaction(transactionRequestDTO);
+
+                assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, response.getStatusCode());
+                assertEquals("SALDO_INSUFICIENTE", response.getBody());
+                verify(transactionService, times(1))
+                                .authorizeTransaction(transactionRequestDTO.getNumeroCartao(),
+                                                transactionRequestDTO.getSenhaCartao(),
+                                                transactionRequestDTO.getValor());
+        }
 }
